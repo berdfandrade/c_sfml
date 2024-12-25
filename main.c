@@ -1,66 +1,54 @@
 #include <SFML/Graphics.h>
+#include "collision.h"
+#include <stdbool.h>
 #include <stdio.h>
+#include <sys/resource.h>
 
 // Definir uma constante com o caminho de uma fonte
 #define FONT_PATH "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
+// Definindo a framerate
+#define FRAMERATE 30
+
+// Para saber quais recursos estão sendo gastos
+void print_resource_usage() {
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+
+    printf("Uso de CPU: %ld.%06ld segundos\n",
+           usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+    printf("Máximo de memória usada: %ld KB\n", usage.ru_maxrss);
+}
+
 int main() {
     // Criação de uma janela
-    sfVideoMode mode = {800, 600, 32}; // Largura, Altura, Profundidade de cor
-    sfRenderWindow *window = sfRenderWindow_create(mode, "Janela SFML em C", sfResize | sfClose, NULL);
+    sfVideoMode mode = {1020, 820, 32}; 
+    sfRenderWindow *window = sfRenderWindow_create(mode, "Meu jogo", sfResize | sfClose, NULL);
+
+    print_resource_usage(); 
+    
+
+    // bool checkCollision(NULL, NULL, NULL, NULL, NULL, NULL){}
 
     if (!window) {
         return 1; // Falha ao criar a janela
     }
 
+    // Criando o círculo do jogador
+    sfCircleShape* circle_player = sfCircleShape_create();
 
-    // Carregar uma fonte 
-    sfFont *font = sfFont_createFromFile(FONT_PATH);
+    // Define o raio do círculo
+    sfCircleShape_setRadius(circle_player, 20.0f);
 
-    // Caso a fonte não carregue entramos nesse fallback aqui
-    if(!font) {
-      printf("Erro ao carregar a fonte/n");
-      return 1;
-    }
+    // Define a cor
+    sfCircleShape_setFillColor(circle_player, sfColor_fromRGB(255, 255, 255));
 
-    // Carregar a textura 
-    sfTexture* texture = sfTexture_createFromFile("./4ur3tny7ka3e1.png", NULL);
+    // Define a posição inicial
+    sfCircleShape_setPosition(circle_player, (sfVector2f){375.0f, 275.0f}); 
 
-    if(!texture){
-        return 1; 
-    }
-
-    // Criar um sprite para exibir a textura
-    sfSprite* player = sfSprite_create();
-    sfSprite_setTexture(player, texture, sfTrue);
-    sfSprite_setPosition(player, (sfVector2f){400.0f, 300.0f});
-
-    // Cria o círculo
-    sfCircleShape* circle = sfCircleShape_create();
-    sfCircleShape_setRadius(circle, 50.0f); // Define o raio do círculo
-    sfCircleShape_setFillColor(circle, sfColor_fromRGB(255, 255, 255)); // Define a cor (verde)
-    sfCircleShape_setPosition(circle, (sfVector2f){375.0f, 275.0f}); // Define a posição
-
-
-    // Criar o texto 
-    sfText *text = sfText_create();
-
-    // Qual é o texto em si
-    sfText_setString(text, "Bem-vindo, Bernardo!");
-
-    // Colocando a fonte no texto 
-    sfText_setFont(text, font);
-
-    // Qual é o tamanho do texto
-    sfText_setCharacterSize(text, 30);
+    // Defindo a velocidade de movimento do círculo
+    float SPEED = 0.1; 
     
-    // Qual é a cor do texto 
-    sfText_setColor(text, sfWhite);
-
-    // Posição do texto
-    sfText_setPosition(text, (sfVector2f){200, 300});
-
-
     // Loop principal
     while (sfRenderWindow_isOpen(window)) {
         sfEvent event;
@@ -72,42 +60,36 @@ int main() {
         }
 
         // Controle do jogador (teclas de movimento)
-        sfVector2f position = sfSprite_getPosition(player);
+        sfVector2f position = sfCircleShape_getPosition(circle_player);
         if (sfKeyboard_isKeyPressed(sfKeyUp)) {
-            position.y -= 5.0f;
+            position.y -= SPEED; // Mover para cima
         }
         if (sfKeyboard_isKeyPressed(sfKeyDown)) {
-            position.y += 5.0f;
+            position.y += SPEED; // Mover para baixo
         }
         if (sfKeyboard_isKeyPressed(sfKeyLeft)) {
-            position.x -= 5.0f;
+            position.x -= SPEED; // Mover para a esquerda
         }
         if (sfKeyboard_isKeyPressed(sfKeyRight)) {
-            position.x += 5.0f;
+            position.x += SPEED; // Mover para a direita
         }
+
+        // Atualizar a posição do círculo do jogador
+        sfCircleShape_setPosition(circle_player, position);
 
         // Limpar a janela com uma cor
         sfRenderWindow_clear(window, sfBlack);
 
-        // Desenhar o texto na janela 
-        sfRenderWindow_drawText(window, text, NULL);
-
-        // Carrega jogador na tela 
-        sfRenderWindow_drawSprite(window, player, NULL);
-
-        // Desenha o círculo na tela
-        sfRenderWindow_drawCircleShape(window, circle, NULL);
+        // Desenha o círculo do jogador na tela
+        sfRenderWindow_drawCircleShape(window, circle_player, NULL);
 
         // Exibir o conteúdo na janela
         sfRenderWindow_display(window);
     }
 
     // Liberar recursos
-    sfRenderWindow_destroy(window);
-    sfSprite_destroy(player);
-    sfFont_destroy(font);
+    sfCircleShape_destroy(circle_player);
     sfRenderWindow_destroy(window);
 
     return 0;
 }
-
